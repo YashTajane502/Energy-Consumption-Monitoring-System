@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Energy Consumption Monitoring System</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+  <!-- Sidebar (desktop) / bottom bar (mobile) -->
+  <nav class="sidebar">
+    <div class="brand">⚡ <span>EnergyMonitor</span></div>
+    <a href="#overview" class="active">📊 <span>Overview</span></a>
+    <a href="#records">🗂️ <span>Records</span></a>
+    <a href="#analytics">📈 <span>Analytics</span></a>
+    <a href="#bill">🧾 <span>Bill</span></a>
+    <a href="#how">⚙️ <span>How it works</span></a>
+  </nav>
+
+  <main>
+    <!-- A. OVERVIEW -->
+    <section id="overview">
+      <header class="top">
+        <div>
+          <h1>Energy Consumption Monitoring System</h1>
+          <p class="muted">Monitor electricity usage, analyze consumption patterns and estimate energy costs.</p>
+        </div>
+        <div class="top-actions">
+          <span class="badge">Demo Mode · sample data</span>
+          <button class="btn ghost" id="resetBtn">Reset demo data</button>
+        </div>
+      </header>
+
+      <div class="cards">
+        <div class="card stat"><span class="muted">Total Records</span><b id="cTotalRecords">0</b></div>
+        <div class="card stat"><span class="muted">Total Energy (kWh)</span><b id="cTotalUnits">0</b></div>
+        <div class="card stat"><span class="muted">Average / Record (kWh)</span><b id="cAverage">0</b></div>
+        <div class="card stat accent"><span class="muted">Estimated Bill (₹)</span><b id="cBill">0</b></div>
+        <div class="card stat"><span class="muted">Highest Consumption</span><b id="cHigh">–</b><small id="cHighSub" class="muted"></small></div>
+        <div class="card stat"><span class="muted">Lowest Consumption</span><b id="cLow">–</b><small id="cLowSub" class="muted"></small></div>
+      </div>
+
+      <div class="grid2">
+        <div class="card"><h3>Consumption per record</h3><div class="chart-wrap"><canvas id="barChart"></canvas><p class="empty-msg">No records yet.</p></div></div>
+        <div class="card"><h3>Share by device</h3><div class="chart-wrap"><canvas id="donutChart"></canvas><p class="empty-msg">No records yet.</p></div></div>
+      </div>
+
+      <div class="grid2">
+        <div class="card"><h3>Consumption distribution</h3><div class="chart-wrap"><canvas id="distChart"></canvas><p class="empty-msg">No records yet.</p></div></div>
+        <div class="card">
+          <h3>Insights</h3>
+          <div id="insights" class="insights"></div>
+          <h3 class="mt">Recent records</h3>
+          <div class="table-scroll">
+            <table><thead><tr><th>ID</th><th>Device</th><th>Date</th><th>kWh</th></tr></thead><tbody id="recentBody"></tbody></table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- B + C. RECORDS & SEARCH -->
+    <section id="records">
+      <h2>Energy Records</h2>
+      <div class="card">
+        <div class="toolbar">
+          <input id="searchInput" type="search" placeholder="Search records…">
+          <select id="searchBy" aria-label="Search by">
+            <option value="all">General search</option>
+            <option value="id">Record ID</option>
+            <option value="device">Exact device name</option>
+            <option value="date">Exact date (DD-MM-YYYY)</option>
+          </select>
+          <select id="sortBy" aria-label="Sort by">
+            <option value="id-asc">ID ↑</option>
+            <option value="id-desc">ID ↓</option>
+            <option value="device-asc">Device A→Z</option>
+            <option value="date-desc">Date (newest)</option>
+            <option value="date-asc">Date (oldest)</option>
+            <option value="units-desc">Units (high→low)</option>
+            <option value="units-asc">Units (low→high)</option>
+          </select>
+          <button class="btn" id="addBtn">+ Add Record</button>
+        </div>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>ID</th><th>Device Name</th><th>Date</th><th>Units (kWh)</th><th>Actions</th></tr></thead>
+            <tbody id="recordsBody"></tbody>
+          </table>
+        </div>
+        <div id="recordsEmpty" class="empty" hidden></div>
+      </div>
+    </section>
+
+    <!-- D. ANALYTICS -->
+    <section id="analytics">
+      <h2>Data Analysis</h2>
+      <p class="muted">Mirrors the C++ <code>analyzeData()</code> method.</p>
+      <div class="grid2">
+        <div class="card"><h3>Analysis summary</h3><ul id="analysisList" class="analysis"></ul></div>
+        <div class="card"><h3>Total kWh by device</h3><div class="chart-wrap"><canvas id="deviceChart"></canvas><p class="empty-msg">No records to analyze.</p></div></div>
+      </div>
+      <div class="card"><h3>Consumption by date</h3><div class="chart-wrap"><canvas id="timeChart"></canvas><p class="empty-msg">No records to analyze.</p></div></div>
+    </section>
+
+    <!-- E. BILL CALCULATOR -->
+    <section id="bill">
+      <h2>Electricity Bill Calculator</h2>
+      <p class="muted">Estimated bill based on the project's simplified slab rates (no taxes or fixed charges).</p>
+      <div class="card">
+        <div class="toolbar">
+          <label for="billUnits">Total units (kWh)</label>
+          <input id="billUnits" type="number" min="0" step="0.01" value="0">
+          <button class="btn ghost" id="useTotalBtn">Use total from records</button>
+        </div>
+        <div id="slabs" class="slabs"></div>
+        <div class="bill-total"><span>Total estimated bill</span><b id="billTotal">₹0.00</b></div>
+        <p class="muted small">Slabs: first 100 units ₹3 · next 200 units ₹5 · above 300 units ₹8.</p>
+      </div>
+    </section>
+
+    <!-- F. HOW IT WORKS -->
+    <section id="how">
+      <h2>How the C++ System Works</h2>
+      <p class="muted">The original program is a menu-driven console app using C++ classes (<code>Record</code>, <code>EnergyMonitor</code>), a <code>vector</code> of records and file handling. This website is only a visual demo — it does <b>not</b> run the C++ code or read <code>energy_data.txt</code>.</p>
+      <div class="flow">
+        <div class="step"><i>1</i><b>Enter details</b><span>Device, date and units are typed in.</span></div>
+        <div class="step"><i>2</i><b>Validate</b><span>Non-empty device, valid date, units ≥ 0.</span></div>
+        <div class="step"><i>3</i><b>Assign ID</b><span>Next ID = highest ID + 1.</span></div>
+        <div class="step"><i>4</i><b>Store</b><span>Record is pushed into the vector.</span></div>
+        <div class="step"><i>5</i><b>Save to file</b><span>Written to <code>energy_data.txt</code>.</span></div>
+        <div class="step"><i>6</i><b>Analyze</b><span>Statistics and slab-based bill.</span></div>
+      </div>
+    </section>
+    <footer class="muted small">Frontend demonstration · data is stored only in this browser (localStorage).</footer>
+  </main>
+
+  <!-- Add / Edit modal -->
+  <dialog id="recordDialog">
+    <form id="recordForm" novalidate>
+      <h3 id="dialogTitle">Add Record</h3>
+      <label>Device name
+        <input id="fDevice" type="text" placeholder="e.g. Air Conditioner">
+        <small class="error" id="eDevice"></small>
+      </label>
+      <label>Date (DD-MM-YYYY)
+        <input id="fDate" type="text" placeholder="15-03-2025" maxlength="10">
+        <small class="error" id="eDate"></small>
+      </label>
+      <label>Units consumed (kWh)
+        <input id="fUnits" type="number" step="0.01" min="0" placeholder="0.00">
+        <small class="error" id="eUnits"></small>
+      </label>
+      <div class="dialog-actions">
+        <button type="button" class="btn ghost" id="cancelBtn">Cancel</button>
+        <button type="submit" class="btn" id="saveBtn">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Confirm dialog (delete / reset) -->
+  <dialog id="confirmDialog">
+    <h3 id="confirmTitle">Are you sure?</h3>
+    <p id="confirmText" class="muted"></p>
+    <div class="dialog-actions">
+      <button class="btn ghost" id="confirmNo">Cancel</button>
+      <button class="btn danger" id="confirmYes">Yes, continue</button>
+    </div>
+  </dialog>
+
+  <div id="toast" class="toast" role="status"></div>
+  <script src="script.js"></script>
+</body>
+</html>
